@@ -1,6 +1,26 @@
 import { Scene } from 'phaser';
 import { EventBus } from '../EventBus';
 
+// Функция за създаване на текстура за клетка
+function createTileTexture(scene, cellSize) {
+    // Създаване на Graphics обект
+    let graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+
+    // Рисуване на квадрат с определен цвят
+    graphics.fillStyle(0x4CAF50, 1); // Зелен цвят за клетка
+    graphics.fillRect(0, 0, cellSize, cellSize); // Размери на клетката
+
+    // Добавяне на черна граница около клетката
+    graphics.lineStyle(2, 0x000000, 1); // Черна линия с дебелина 2px
+    graphics.strokeRect(0, 0, cellSize, cellSize);
+
+    // Генериране на текстура от Graphics обекта
+    graphics.generateTexture('tile', cellSize, cellSize);
+
+    // Унищожаване на Graphics обекта, тъй като вече сме създали текстурата
+    graphics.destroy();
+}
+
 export class Game extends Scene
 {
     constructor ()
@@ -11,10 +31,9 @@ export class Game extends Scene
     preload ()
     {
         this.load.setPath('assets');
-        
-        // this.load.image('star', 'star.png');
-        // this.load.image('background', 'bg.png');
-        // this.load.image('logo', 'logo.png');
+
+        // Създаване на текстурата за клетката
+        // cellSize ще бъде дефиниран в create()
     }
 
     create ()
@@ -22,7 +41,7 @@ export class Game extends Scene
         // Define grid parameters
         const GRID_COLS = 14;
         const GRID_ROWS = 10;
-        const BUTTON_HEIGHT_RATIO = 0.1; // 10% for buttons
+        const BUTTON_HEIGHT_RATIO = 0.1; // 10% за бутони
         const canvasWidth = this.sys.game.config.width;
         const canvasHeight = this.sys.game.config.height;
         
@@ -30,42 +49,35 @@ export class Game extends Scene
         const usableHeight = canvasHeight * (1 - BUTTON_HEIGHT_RATIO);
         const cellSize = Math.min(canvasWidth / GRID_COLS, usableHeight / GRID_ROWS);
         
+        createTileTexture(this, cellSize);
+        
         // Calculate grid dimensions
         const gridWidth = cellSize * GRID_COLS;
-        const gridHeight = cellSize * GRID_ROWS;
+        // const gridHeight = cellSize * GRID_ROWS;
         
         // Calculate offsets to center the grid horizontally and align to the top
         const offsetX = (canvasWidth - gridWidth) / 2;
         const offsetY = 0; // Align grid to the top
         
-        // Create a graphics object for the grid
-        const grid = this.add.graphics();
-        grid.lineStyle(2, 0xffffff, 1);
-        
-        // Draw vertical lines
-        for (let i = 0; i <= GRID_COLS; i++) {
-            grid.moveTo(offsetX + i * cellSize, offsetY);
-            grid.lineTo(offsetX + i * cellSize, offsetY + gridHeight);
-        }
-        
-        // Draw horizontal lines
-        for (let i = 0; i <= GRID_ROWS; i++) {
-            grid.moveTo(offsetX, offsetY + i * cellSize);
-            grid.lineTo(offsetX + gridWidth, offsetY + i * cellSize);
-        }
-        
-        grid.strokePath();
-        
-        // Store cell positions
+        // Store cell positions and create tile sprites
         this.gridCells = [];
         for (let row = 0; row < GRID_ROWS; row++) {
             this.gridCells[row] = [];
             for (let col = 0; col < GRID_COLS; col++) {
+                const x = offsetX + col * cellSize + cellSize / 2;
+                const y = offsetY + row * cellSize + cellSize / 2;
+                
+                const tile = this.add.sprite(x, y, 'tile').setDisplaySize(cellSize, cellSize);
+                
                 this.gridCells[row][col] = {
-                    x: offsetX + col * cellSize + cellSize / 2,
-                    y: offsetY + row * cellSize + cellSize / 2,
-                    occupied: false
+                    x: x,
+                    y: y,
+                    terrain: 'plain',
+                    occupied: false,
+                    unit: null,
+                    sprite: tile
                 };
+                
             }
         }
         
